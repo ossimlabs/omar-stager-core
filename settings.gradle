@@ -6,7 +6,7 @@ pluginManagement {
 
 include 'omar-stager-core-plugin'
 
-project(':omar-stager-core-plugin').projectDir = "${rootProject.projectDir}/plugins/omar-stager-plugin" as File
+project(':omar-stager-core-plugin').projectDir = "${rootProject.projectDir}/plugins/omar-stager-core-plugin" as File
 
 if ( System.getenv('O2_INLINE_BUILD')) {
   def modules = [
