@@ -95,18 +95,30 @@ class StagerService
 									imageStager.setUseFastHistogramStagingFlag( params.useFastHistogramStaging )
 									imageStager.setQuietFlag( true )
 
-									if ( params.buildHistograms && params.buildOverviews
-											&& imageStager.hasOverviews() && params.buildHistogramsWithR0 )
+									// we only need to do this check if we don't have overviews already
+									// For example, J2K usually have about 5 levels of 
+									// overviews but we build overviews for the rest of the level like
+									// R6, R7, ... etc.
+									//
+									// If we have to build histograms we have to do this at R0 and not at
+									// a reduced resolution.
+									//
+									// if there are no overviews gthen we can ignore this and go straight to the stage call 
+									// without having to separate the overview and histogram process.
+									//
+									if(imageStager.hasOverviews())
 									{
+										if ( params.buildHistograms && params.buildOverviews
+												&& imageStager.hasOverviews() && params.buildHistogramsWithR0 )
+										{
+											imageStager.setHistogramStagingFlag( false )
+											imageStager.stage()
 
-										imageStager.setHistogramStagingFlag( false )
-										imageStager.stage()
-
-										imageStager.setHistogramStagingFlag( true )
-										imageStager.setOverviewStagingFlag( false )
+											imageStager.setHistogramStagingFlag( true )
+											imageStager.setOverviewStagingFlag( false )
+										}
 									}
 									imageStager.stage()
-
 								}
 							}
 						}
