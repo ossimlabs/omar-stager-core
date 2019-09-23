@@ -1,6 +1,7 @@
 if ( System.getenv('O2_INLINE_BUILD') ) {
   grails {
     plugins {
+      compile project(":omar-core-plugin")
       compile project(":omar-oms-plugin")
       compile project(":omar-hibernate-spatial-plugin")
     }
