@@ -1,7 +1,7 @@
 package omar.stager.core
 
 
-import com.vividsolutions.jts.geom.Point
+import org.locationtech.jts.geom.Point
 
 
 class BasicEncyclopedia {

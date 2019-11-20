@@ -5,7 +5,7 @@ import omar.core.Repository
 import omar.core.ProcessStatus
 import omar.core.HttpStatus
 import joms.oms.ImageStager
-import grails.transaction.Transactional
+import grails.gorm.transactions.Transactional
 
 @Slf4j
 @Transactional
