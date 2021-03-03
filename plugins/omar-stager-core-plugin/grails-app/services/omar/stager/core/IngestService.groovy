@@ -68,7 +68,16 @@ class IngestService implements ApplicationContextAware
 				log.debug( "Creating default repository /" )
 			}
 
+			if( !repository )
+			{
+				log.error ("Could not create repository")
+			}
+
 			return repository
+		}
+		else
+		{
+			log.error("IngestService: Does not contain the proper separatorChar")
 		}
 	}
 
