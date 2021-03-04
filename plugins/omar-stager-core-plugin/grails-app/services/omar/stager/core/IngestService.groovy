@@ -17,6 +17,8 @@ class IngestService implements ApplicationContextAware
 		def status  = HttpStatus.OK
 		def message = ""
 
+		println "This is Chris's test"
+
 		if ( oms )
 		{
 			def omsInfoParsers = applicationContext.getBeansOfType( OmsInfoParser.class )
@@ -53,6 +55,8 @@ class IngestService implements ApplicationContextAware
 	synchronized def findRepositoryForFile( def file )
 	{
 		def repository
+
+		println "This is Aimee's test"
 
 		if ( File.separatorChar == '\\' )
 		{
