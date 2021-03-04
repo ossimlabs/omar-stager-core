@@ -17,8 +17,6 @@ class IngestService implements ApplicationContextAware
 		def status  = HttpStatus.OK
 		def message = ""
 
-		println "This is Chris's test"
-
 		if ( oms )
 		{
 			def omsInfoParsers = applicationContext.getBeansOfType( OmsInfoParser.class )
@@ -56,8 +54,6 @@ class IngestService implements ApplicationContextAware
 	{
 		def repository
 
-		println "This is Aimee's test"
-
 		if ( File.separatorChar == '\\' )
 		{
 			// I am having troubles with windows.  We will address this when we refactor the
@@ -82,6 +78,7 @@ class IngestService implements ApplicationContextAware
 		else
 		{
 			log.error("IngestService: Does not contain the proper separatorChar")
+			log.error("You may not have the appropriate permissions")
 		}
 	}
 
