@@ -11,42 +11,55 @@ podTemplate(containers: [
         ttyEnabled: true,
         command: 'cat'
     )]
-) {
+) 
+{
   node(POD_LABEL) {
-    stage("Checkout branch") {
-      scmVars = checkout(scm)
+     stage("Checkout branch") {
+        APP_NAME = PROJECT_URL.tokenize('/').last()
+        scmVars = checkout(scm)
+        Date date = new Date()
+        String currentDate = date.format("YYYY-MM-dd-HH-mm-ss")
+        MASTER = "master"
+        GIT_BRANCH_NAME = scmVars.GIT_BRANCH
+        BRANCH_NAME = """${sh(returnStdout: true, script: "echo ${GIT_BRANCH_NAME} | awk -F'/' '{print \$2}'").trim()}"""
+        VERSION = """${sh(returnStdout: true, script: "cat chart/Chart.yaml | grep version: | awk -F'version:' '{print \$2}'").trim()}"""
+        GIT_TAG_NAME = APP_NAME + "-" + VERSION
+        ARTIFACT_NAME = "ArtifactName"
 
-      GIT_BRANCH_NAME = scmVars.GIT_BRANCH
-      BRANCH_NAME = """${sh(returnStdout: true, script: "echo ${GIT_BRANCH_NAME} | awk -F'/' '{print \$2}'").trim()}"""
-      GRADLE_BUILD_VERSION = sh(returnStdout: true, script: 'grep -Po "(?<=buildVersion=).*" gradle.properties').trim()
-
-      script {
-        if (BRANCH_NAME == 'master') {
-          buildName "${GRADLE_BUILD_VERSION} - ${BRANCH_NAME}"
-        } else {
-          buildName "${GRADLE_BUILD_VERSION} - ${BRANCH_NAME}-SNAPSHOT"
-        }
-      }
+            if (BRANCH_NAME == "${MASTER}") {
+                buildName "${VERSION}"
+                TAG_NAME = "${VERSION}"
+            }
+            else {
+                buildName "${BRANCH_NAME}-${currentDate}"
+                TAG_NAME = "${BRANCH_NAME}-${currentDate}"
+            }
+        
     }
 
     stage("Load Variables") {
-      withCredentials([string(credentialsId: 'o2-artifact-project', variable: 'o2ArtifactProject')]) {
-        step([$class     : "CopyArtifact",
-              projectName: o2ArtifactProject,
-              filter     : "common-variables.groovy",
-              flatten    : true])
-      }
-
-      load "common-variables.groovy"
+        withCredentials([string(credentialsId: 'o2-artifact-project', variable: 'o2ArtifactProject')]) {
+            step ([$class: "CopyArtifact",
+                projectName: o2ArtifactProject,
+                filter: "common-variables.groovy",
+                flatten: true])
+        }
+        load "common-variables.groovy"
+        DOCKER_IMAGE_PATH = "${DOCKER_REGISTRY_PRIVATE_UPLOAD_URL}/${APP_NAME}"
     }
-
-    container('jdk11') {
-      stage("Assemble") {
+      
+      
+      
+  stage('Build') {
+    container('builder') {
         sh """
-          ./gradlew assemble -PossimMavenProxy=${MAVEN_DOWNLOAD_URL}
+            ./gradlew assemble -PossimMavenProxy=${MAVEN_DOWNLOAD_URL}
         """
-        archiveArtifacts "plugins/*/build/libs/*.jar"
-      }
+    archiveArtifacts "plugins/*/build/libs/*.jar"
+    }
+}
+      
+  
 
       stage("Publish Nexus") {
         withCredentials([[$class          : 'UsernamePasswordMultiBinding',
@@ -60,4 +73,3 @@ podTemplate(containers: [
       }
     }
   }
-}
