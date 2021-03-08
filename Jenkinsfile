@@ -9,12 +9,18 @@ properties([
 ])
 
 podTemplate(containers: [
-    containerTemplate(
+     containerTemplate(
+            image: "${DOCKER_REGISTRY_DOWNLOAD_URL}/omar-builder:jdk11",
+            name: 'builder',
+            command: 'cat',
+            ttyEnabled: true
+        ),
+     containerTemplate(
         name: 'jdk11',
         image: 'openjdk:11',
         ttyEnabled: true,
         command: 'cat'
-    )]
+     )]
 ) 
 {
   node(POD_LABEL) {
