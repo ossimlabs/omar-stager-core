@@ -1,4 +1,8 @@
 properties([
+     parameters([
+        string(name: 'PROJECT_URL', defaultValue: 'https://github.com/<organization/service-name>', description: 'The project github URL'),
+        string(name: 'DOCKER_REGISTRY_DOWNLOAD_URL', defaultValue: 'nexus-docker-private-group.ossim.io', description: 'Repository of docker images')
+    ]),
     pipelineTriggers([[$class: "GitHubPushTrigger"]]),
     [$class: 'GithubProjectProperty', displayName: '', projectUrlStr: 'https://github.com/ossimlabs/omar-stager-core'],
     buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '3', daysToKeepStr: '', numToKeepStr: '20'))
