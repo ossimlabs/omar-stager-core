@@ -4,6 +4,8 @@ import omar.core.Repository
 import omar.core.HttpStatus
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
+import org.springframework.context.MessageSource
+
 
 class IngestService implements ApplicationContextAware
 {
@@ -11,6 +13,7 @@ class IngestService implements ApplicationContextAware
 
 	def applicationContext
 
+        MessageSource messageSource
 
 	def ingest( def oms, def baseDir = '/' )
 	{
@@ -36,12 +39,10 @@ class IngestService implements ApplicationContextAware
 					else
 					{
 						status = HttpStatus.UNSUPPORTED_MEDIA_TYPE
-						message = ""
-						dataSet.errors.allErrors.each{
 
-							if(message)	message = "${message}\n${it}".toString()
-							else message = it.toString()
-						}
+						message = dataSet.errors.allErrors.collect{ e -> 
+							messageSource.getMessage(e, Locale.default)
+						}.join(' ')
 					}
 				}
 			}
@@ -77,7 +78,7 @@ class IngestService implements ApplicationContextAware
 		}
 		else
 		{
-			log.error("IngestService: Does not contain the proper separatorChar")
+			// log.error("IngestService: Does not contain the proper separatorChar")
 			log.error("You may not have the appropriate permissions")
 		}
 	}
