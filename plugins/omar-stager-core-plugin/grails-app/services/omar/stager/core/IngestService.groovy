@@ -4,18 +4,27 @@ import omar.core.Repository
 import omar.core.HttpStatus
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
+import org.springframework.context.MessageSource
+import grails.core.GrailsApplication
+import java.text.SimpleDateFormat
+
 
 class IngestService implements ApplicationContextAware
 {
 	static transactional = true
 
+	GrailsApplication grailsApplication
+
 	def applicationContext
 
+	MessageSource messageSource
 
 	def ingest( def oms, def baseDir = '/' )
 	{
 		def status  = HttpStatus.OK
 		def message = ""
+
+		def errorFileEnabled = grailsApplication.config.getProperty('stager.errorFile.enabled', Boolean, false)
 
 		if ( oms )
 		{
@@ -28,6 +37,7 @@ class IngestService implements ApplicationContextAware
 
 				for ( def dataSet in dataSets )
 				{
+
 					if ( dataSet.save() )
 					{
 						status = HttpStatus.OK
@@ -36,12 +46,19 @@ class IngestService implements ApplicationContextAware
 					else
 					{
 						status = HttpStatus.UNSUPPORTED_MEDIA_TYPE
-						message = ""
-						dataSet.errors.allErrors.each{
 
-							if(message)	message = "${message}\n${it}".toString()
-							else message = it.toString()
+						message = dataSet.errors.allErrors.collect{ e -> 
+							messageSource.getMessage(e, Locale.default)
+						}.join(' ')
+
+						def filename = dataSet.fileObjects.find { it.type == 'main' }.name
+
+						log.error("🚩 Error: ${filename} ${status} ${message}")
+
+						if (errorFileEnabled){
+							createErrorFile(filename, message, status)
 						}
+
 					}
 				}
 			}
@@ -77,8 +94,37 @@ class IngestService implements ApplicationContextAware
 		}
 		else
 		{
-			log.error("IngestService: Does not contain the proper separatorChar")
+			// log.error("IngestService: Does not contain the proper separatorChar")
 			log.error("You may not have the appropriate permissions")
+		}
+	}
+
+	/**
+	 * Creates a text file with the image file name and path,
+	 * and the reason the stage/ingest was not successful.  This file
+	 * can be used troubleshoot, and help to restage the image at a later time.
+	 *
+	 * @param filename The image file name
+	 * @param message Http status message
+	 * @param status Http status code
+	 */
+	def createErrorFile (String filename, String message, Integer status) {
+		def errorFileDir = grailsApplication.config.getProperty('stager.errorFile.directory', String, "/tmp/omar-stager/errors/")
+
+		String pattern = "yyyy-MM-dd-HH-mm-ss-"
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern)
+		String datePrefix = simpleDateFormat.format(new Date())
+
+		File errorDir = errorFileDir as File
+		errorDir.mkdirs()
+
+		File errorFileName = File.createTempFile("stager-${datePrefix}", ".txt", errorDir)
+
+		errorFileName.withWriter { out ->
+			out.println "filename: ${filename}"
+			out.println "message: ${message}"
+			out.println "status: ${status}"
+
 		}
 	}
 
