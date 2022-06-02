@@ -53,9 +53,10 @@ class IngestService implements ApplicationContextAware
 
 						def filename = dataSet.fileObjects.find { it.type == 'main' }.name
 
-						log.error("🚩 Error: ${filename} ${status} ${message}")
+						log.error("🚩 Error Kasey: ${filename} ${status} ${message}")
 
 						if (errorFileEnabled){
+							log.info("Hi it me")
 							createErrorFile(filename, message, status)
 										def error = new OmarStageErrors( processId: processId,
 					filename: filename,
