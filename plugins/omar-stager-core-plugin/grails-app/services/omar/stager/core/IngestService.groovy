@@ -47,7 +47,7 @@ class IngestService implements ApplicationContextAware
 					{
 						status = HttpStatus.UNSUPPORTED_MEDIA_TYPE
 
-						message = dataSet.errors.allErrors.collect{ e -> 
+						message = dataSet.errors.allErrors.collect{ e ->
 							messageSource.getMessage(e, Locale.default)
 						}.join(' ')
 
@@ -57,6 +57,11 @@ class IngestService implements ApplicationContextAware
 
 						if (errorFileEnabled){
 							createErrorFile(filename, message, status)
+										def error = new OmarStageError( processId: processId,
+					filename: filename,
+					statusMessage: "${message}"
+			)
+			error.save( flush: true )
 						}
 
 					}
