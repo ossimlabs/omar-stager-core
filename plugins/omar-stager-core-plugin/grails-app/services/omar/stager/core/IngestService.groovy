@@ -57,7 +57,7 @@ class IngestService implements ApplicationContextAware
 
 						if (errorFileEnabled){
 							createErrorFile(filename, message, status)
-										def error = new OmarStageError( processId: processId,
+										def error = new OmarStageErrors( processId: processId,
 					filename: filename,
 					statusMessage: "${message}"
 			)
