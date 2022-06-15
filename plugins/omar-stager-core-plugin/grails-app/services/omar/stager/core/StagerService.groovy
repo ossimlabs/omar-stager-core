@@ -96,14 +96,14 @@ class StagerService
 									imageStager.setQuietFlag( true )
 
 									// we only need to do this check if we don't have overviews already
-									// For example, J2K usually have about 5 levels of 
+									// For example, J2K usually have about 5 levels of
 									// overviews but we build overviews for the rest of the level like
 									// R6, R7, ... etc.
 									//
 									// If we have to build histograms we have to do this at R0 and not at
 									// a reduced resolution.
 									//
-									// if there are no overviews gthen we can ignore this and go straight to the stage call 
+									// if there are no overviews gthen we can ignore this and go straight to the stage call
 									// without having to separate the overview and histogram process.
 									//
 									if(imageStager.hasOverviews())
@@ -139,6 +139,7 @@ class StagerService
 						log.error e.toString()
 						results.status = HttpStatus.UNSUPPORTED_MEDIA_TYPE
 						results.message = "XML is in incorrect format for file ${params.filename}"
+						ingestService.writeErrors(filename, results.message, results.status)
 					}
 
 					def (status, message) = ingestService.ingest( oms, baseDir )

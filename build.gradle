@@ -34,7 +34,7 @@ subprojects { project ->
     apply plugin:"eclipse"
     apply plugin:"idea"
 
-    if ( isGrailsProject )    
+    if ( isGrailsProject )
     {
         if ( isGrailsApp )
         {
@@ -55,7 +55,7 @@ subprojects { project ->
             apply plugin:"org.grails.grails-web"
             apply plugin:"com.github.erdi.webdriver-binaries"
         }
-        else if ( isGrailsPlugin ) 
+        else if ( isGrailsPlugin )
         {
             apply plugin:"org.grails.grails-plugin"
             apply plugin:"org.grails.grails-plugin-publish"
@@ -83,9 +83,9 @@ subprojects { project ->
                             username mavenRepoUsername
                             password mavenRepoPassword
                             }
-                            url = mavenPublishUrl.toLowerCase()
+                            url = mavenPublishUrl?.toLowerCase()
                         }
-                    }                
+                    }
                     jar.onlyIf {
                         !file(jarDestination).exists()
                     }
@@ -169,7 +169,7 @@ subprojects { project ->
                 compile 'org.springframework.cloud:spring-cloud-starter-config'
                 compile "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client"
             }
-            else if ( isGrailsPlugin ) 
+            else if ( isGrailsPlugin )
             {
                 profile "org.grails.profiles:web-plugin"
                 testCompile "org.grails:grails-plugin-testing"
@@ -178,8 +178,8 @@ subprojects { project ->
 
         bootRun {
             jvmArgs(
-                '-Dspring.output.ansi.enabled=always', 
-                '-noverify', 
+                '-Dspring.output.ansi.enabled=always',
+                '-noverify',
                 '-XX:TieredStopAtLevel=1',
                 '-Xmx1024m')
             sourceResources sourceSets.main
@@ -230,7 +230,7 @@ subprojects { project ->
                 packagePlugin = true
             }
         }
-    }    
+    }
 }
 
 String getConfigurationProperty( String envVar, String sysProp )
