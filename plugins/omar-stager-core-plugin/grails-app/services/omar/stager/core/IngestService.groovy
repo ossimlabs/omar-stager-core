@@ -106,7 +106,7 @@ class IngestService implements ApplicationContextAware
 		else
 		{
 			// log.error("IngestService: Does not contain the proper separatorChar")
-			log.error("You may not have the appropriate permissions")
+			log.debug("You may not have the appropriate permissions")
 		}
 	}
 
