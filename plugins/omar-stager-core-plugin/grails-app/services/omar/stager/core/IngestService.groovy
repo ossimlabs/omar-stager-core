@@ -30,8 +30,8 @@ class IngestService implements ApplicationContextAware
     Boolean errorsToSlack
 	@Value('${stager.errors.slack.webhook}')
 	String slackWebhook
-	@Value('${stager.errors.slack.message}')
-	String slackMessage
+	@Value('${stager.errors.slack.messagePrefix}')
+	String slackPrefix
 
 	def ingest( def oms, def baseDir = '/' )
 	{
@@ -156,7 +156,7 @@ class IngestService implements ApplicationContextAware
 			HttpClient httpClient = HttpClient.create(new URL(slack.toString() - slack.path))
 
 			// Pull in the message from the configmap and replace the placeholders
-			slackMessage = slackMessage.replace('<filename>', filename).replace('<message>', message)
+			String slackMessage = "${slackPrefix}\nFile: ```${ -> filename}```\nError: ```${-> message}```"
 
 			Map<String, String> slackMessageTemplate = new HashMap<>()
   				slackMessageTemplate.put("text", slackMessage)
