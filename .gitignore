@@ -11,3 +11,5 @@ out/
 .settings
 .classpath
 prodDb.mv.db
+plugins/omar-stager-core-plugin/bin
+.vscode
