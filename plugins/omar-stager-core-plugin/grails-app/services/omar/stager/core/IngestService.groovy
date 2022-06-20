@@ -176,7 +176,7 @@ class IngestService implements ApplicationContextAware
                                             )
             if ( !logErrors.save() ) {
                 	logErrors.errors.allErrors.each {
-                    println messageSource.getMessage( it, Locale.default )
+                    log.error(messageSource.getMessage( it, Locale.default ))
                 }
             }
         }
