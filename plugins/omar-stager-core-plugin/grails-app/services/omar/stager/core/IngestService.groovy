@@ -7,6 +7,11 @@ import org.springframework.context.ApplicationContextAware
 import org.springframework.context.MessageSource
 import grails.core.GrailsApplication
 import java.text.SimpleDateFormat
+import org.springframework.beans.factory.annotation.Value
+import io.micronaut.http.client.HttpClient
+import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpRequest
+import io.micronaut.http.MutableHttpRequest
 
 
 class IngestService implements ApplicationContextAware
@@ -18,6 +23,15 @@ class IngestService implements ApplicationContextAware
 	def applicationContext
 
 	MessageSource messageSource
+
+	@Value('${stager.errors.table.enabled:true}')
+    Boolean errorsToTable
+    @Value('${stager.errors.slack.enabled:false}')
+    Boolean errorsToSlack
+	@Value('${stager.errors.slack.webhook}')
+	String slackWebhook
+	@Value('${stager.errors.slack.messagePrefix}')
+	String slackPrefix
 
 	def ingest( def oms, def baseDir = '/' )
 	{
@@ -47,17 +61,14 @@ class IngestService implements ApplicationContextAware
 					{
 						status = HttpStatus.UNSUPPORTED_MEDIA_TYPE
 
-						message = dataSet.errors.allErrors.collect{ e -> 
+						message = dataSet.errors.allErrors.collect{ e ->
 							messageSource.getMessage(e, Locale.default)
 						}.join(' ')
 
 						def filename = dataSet.fileObjects.find { it.type == 'main' }.name
 
 						log.error("🚩 Error: ${filename} ${status} ${message}")
-
-						if (errorFileEnabled){
-							createErrorFile(filename, message, status)
-						}
+						ingestService.writeErrors(filename, message, status)
 
 					}
 				}
@@ -95,7 +106,7 @@ class IngestService implements ApplicationContextAware
 		else
 		{
 			// log.error("IngestService: Does not contain the proper separatorChar")
-			log.error("You may not have the appropriate permissions")
+			log.debug("You may not have the appropriate permissions")
 		}
 	}
 
@@ -127,6 +138,49 @@ class IngestService implements ApplicationContextAware
 
 		}
 	}
+
+	/**
+	 * If enabled, sends a slack message to the webhook that is configured
+	 * in the omar-stager configmap.
+	 * If enabled, writes the error to the omar_stager_errors table.
+	 *
+	 * @param filename The image file name
+	 * @param message Http status message
+	 * @param status Http status code
+	 */
+	def writeErrors (String filename, String message, Integer status) {
+
+        if (errorsToSlack) {
+			log.info("Writing error to slack.")
+			URL slack = new URL(slackWebhook)
+			HttpClient httpClient = HttpClient.create(new URL(slack.toString() - slack.path))
+
+			// Pull in the message from the configmap and replace the placeholders
+			String slackMessage = "${slackPrefix}\nFile: ```${ -> filename}```\nError: ```${-> message}```"
+
+			Map<String, String> slackMessageTemplate = new HashMap<>()
+  				slackMessageTemplate.put("text", slackMessage)
+				slackMessageTemplate.put("type","mrkdwn")
+			MutableHttpRequest<String> request = HttpRequest.POST(slack.path, "");
+			request.header("Content-Type", "application/json");
+			request.body(slackMessageTemplate)
+			HttpResponse<String> response = httpClient.toBlocking().exchange(request, String)
+
+		}
+        if (errorsToTable) {
+			log.info("Writing error to table.")
+            def logErrors = new OmarStagerErrors(
+                                            filename: filename,
+                                            statusMessage: message,
+											status: status
+                                            )
+            if ( !logErrors.save() ) {
+                	logErrors.errors.allErrors.each {
+                    log.error(messageSource.getMessage( it, Locale.default ))
+                }
+            }
+        }
+    }
 
 	void setApplicationContext( ApplicationContext applicationContext )
 	{
