@@ -167,11 +167,10 @@ class IngestService implements ApplicationContextAware
 
 		}
         if (errorsToTable) {
-			log.info("Writing error to table.")
-			String errorMessage = message.toString()
+	    log.info("Writing error to table.")
             def logErrors = new OmarStagerErrors(
                                             filename: filename,
-                                            statusMessage: errorMessage,
+                                            statusMessage: message,
 											status: status
                                             )
             if ( !logErrors.save() ) {
