@@ -12,12 +12,11 @@ import io.micronaut.http.client.HttpClient
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.MutableHttpRequest
+import javax.transaction.Transactional
 
-
+@Transactional
 class IngestService implements ApplicationContextAware
 {
-	static transactional = true
-
 	GrailsApplication grailsApplication
 
 	def applicationContext
@@ -168,7 +167,7 @@ class IngestService implements ApplicationContextAware
 
 		}
         if (errorsToTable) {
-			log.info("Writing error to table.")
+	    log.info("Writing error to table.")
             def logErrors = new OmarStagerErrors(
                                             filename: filename,
                                             statusMessage: message,
