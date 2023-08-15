@@ -5,7 +5,7 @@ plugins {
 dependencies {
     implementation "commons-io:commons-io:${commonsIoVersion}"
     implementation "org.codehaus.gpars:gpars:${gparsVersion}"    
-    implementation "org.locationtech.jts:jts-core:${jtsCoreVersion}"
+    api "org.locationtech.jts:jts-core:${jtsCoreVersion}"
 
     implementation 'io.ossim.omar.plugins:omar-core-plugin:+'
     api 'io.ossim.omar.plugins:omar-oms-plugin:+'
