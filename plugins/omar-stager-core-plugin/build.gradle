@@ -7,7 +7,7 @@ dependencies {
     implementation "org.codehaus.gpars:gpars:${gparsVersion}"    
     api "org.locationtech.jts:jts-core:${jtsCoreVersion}"
 
-    implementation 'io.ossim.omar.plugins:omar-core-plugin:+'
+    api 'io.ossim.omar.plugins:omar-core-plugin:+'
     api 'io.ossim.omar.plugins:omar-oms-plugin:+'
     implementation 'io.ossim.omar.plugins:omar-hibernate-spatial-plugin:+'
 }
