@@ -1,30 +1,18 @@
-if ( System.getenv('O2_INLINE_BUILD') ) {
-    grails {
-        plugins {
-            if ( System.getenv('O2_INLINE_BUILD') ) {
-                compile project(":omar-core-plugin")
-                compile project(":omar-oms-plugin")
-                compile project(":omar-hibernate-spatial-plugin")            
-            }
-        }
-    }
+plugins {
+  id 'java-library'
 }
+
 dependencies {
-    //compile project( ":${ rootProject.name }-lib" )
-    if ( ! System.getenv('O2_INLINE_BUILD') ) {
-        compile "io.ossim.omar.plugins-RELEASE:omar-core-plugin:+"
-        compile "io.ossim.omar.plugins-RELEASE:omar-oms-plugin:+"
-        compile "io.ossim.omar.plugins-RELEASE:omar-hibernate-spatial-plugin:+"
-    }
+    implementation "commons-io:commons-io:${commonsIoVersion}"
+    implementation "org.codehaus.gpars:gpars:${gparsVersion}"    
+    api "org.locationtech.jts:jts-core:${jtsCoreVersion}"
+    api "org.locationtech.jts.io:jts-io-common:${jtsCoreVersion}"
 
-    compile group: 'commons-io', name: 'commons-io', version: '2.6'
-    compile group: 'org.codehaus.gpars', name: 'gpars', version: '1.2.1'    
-    compile group: 'org.locationtech.jts', name: 'jts-core', version: '1.16.1'
+    api 'io.ossim.omar.plugins:omar-core-plugin:+'
+    api 'io.ossim.omar.plugins:omar-oms-plugin:+'
+    implementation 'io.ossim.omar.plugins:omar-hibernate-spatial-plugin:+'
+}
 
-    
-    compile 'org.quartz-scheduler:quartz:2.3.2'
-
-    compile ( "org.grails.plugins:quartz:2.0.13" ) {
-	exclude module: 'quartz'
-    }
+assets {
+    packagePlugin = true
 }
