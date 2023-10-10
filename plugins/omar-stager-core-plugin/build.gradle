@@ -4,13 +4,14 @@ plugins {
 
 dependencies {
     implementation "commons-io:commons-io:${commonsIoVersion}"
-    implementation "org.codehaus.gpars:gpars:${gparsVersion}"    
+    implementation "org.codehaus.gpars:gpars:${gparsVersion}"
     api "org.locationtech.jts:jts-core:${jtsCoreVersion}"
     api "org.locationtech.jts.io:jts-io-common:${jtsCoreVersion}"
 
     api 'io.ossim.omar.plugins:omar-core-plugin:+'
     api 'io.ossim.omar.plugins:omar-oms-plugin:+'
     implementation 'io.ossim.omar.plugins:omar-hibernate-spatial-plugin:+'
+    implementation( "io.micronaut:micronaut-http-client" )
 }
 
 assets {
