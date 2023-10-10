@@ -15,3 +15,5 @@ out/
 values-dev.yaml
 prodDb.mv.db
 bin
+plugins/omar-stager-core-plugin/bin
+.vscode
