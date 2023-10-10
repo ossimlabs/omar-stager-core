@@ -2,6 +2,7 @@ Thumbs.db
 .DS_Store
 .gradle
 build/
+target/
 out/
 .idea
 *.iml
@@ -10,6 +11,9 @@ out/
 .project
 .settings
 .classpath
+.factorypath
+values-dev.yaml
 prodDb.mv.db
+bin
 plugins/omar-stager-core-plugin/bin
 .vscode
