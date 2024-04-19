@@ -16,14 +16,15 @@ import javax.transaction.Transactional
 import java.time.LocalDateTime
 
 @Transactional
-class IngestService implements ApplicationContextAware {
-    GrailsApplication grailsApplication
+class IngestService implements ApplicationContextAware
+{
+	GrailsApplication grailsApplication
 
-    def applicationContext
+	def applicationContext
 
-    MessageSource messageSource
+	MessageSource messageSource
 
-    @Value('${stager.errors.table.enabled:true}')
+	@Value('${stager.errors.table.enabled:true}')
     Boolean errorsToTable
 
     @Value('${stager.errors.teams.enabled:false}')
@@ -41,98 +42,111 @@ class IngestService implements ApplicationContextAware {
     @Value('${stager.errors.teams.message}')
     String teamsPrefix
 
-    def ingest(def oms, def baseDir = '/') {
-        def status = HttpStatus.OK
+    def ingest( def oms, def baseDir = '/' )
+    {
+        def status  = HttpStatus.OK
         def message = ""
 
-        def errorFileEnabled = grailsApplication.config.getProperty('stager.errorFile.enabled', Boolean, false)
+		def errorFileEnabled = grailsApplication.config.getProperty('stager.errorFile.enabled', Boolean, false)
 
-        if (oms) {
-            def omsInfoParsers = applicationContext.getBeansOfType(OmsInfoParser.class)
-            def repository = Repository.findByBaseDir((baseDir as File).absolutePath)
+		if ( oms )
+		{
+			def omsInfoParsers = applicationContext.getBeansOfType( OmsInfoParser.class )
+			def repository = Repository.findByBaseDir( ( baseDir as File ).absolutePath )
 
-            for (def parser in omsInfoParsers?.values()) {
-                def dataSets = parser.processDataSets(oms, repository)
+			for ( def parser in omsInfoParsers?.values() )
+			{
+				def dataSets = parser.processDataSets( oms, repository )
 
-                for (def dataSet in dataSets) {
+				for ( def dataSet in dataSets )
+				{
 
-                    if (dataSet.save()) {
-                        status = HttpStatus.OK
-                        message = "Added dataset"
-                    } else {
-                        status = HttpStatus.UNSUPPORTED_MEDIA_TYPE
+					if ( dataSet.save() )
+					{
+						status = HttpStatus.OK
+						message = "Added dataset"
+					}
+					else
+					{
+						status = HttpStatus.UNSUPPORTED_MEDIA_TYPE
 
-                        message = dataSet.errors.allErrors.collect { e ->
-                            messageSource.getMessage(e, Locale.default)
-                        }.join(' ')
+						message = dataSet.errors.allErrors.collect{ e ->
+							messageSource.getMessage(e, Locale.default)
+						}.join(' ')
 
-                        def filename = dataSet.fileObjects.find { it.type == 'main' }.name
+						def filename = dataSet.fileObjects.find { it.type == 'main' }.name
 
-                        log.error("🚩 Error: ${filename} ${status} ${message}")
-                        ingestService.writeErrors(filename, message, status)
+						log.error("🚩 Error: ${filename} ${status} ${message}")
+						ingestService.writeErrors(filename, message, status)
 
-                    }
-                }
-            }
-        }
+					}
+				}
+			}
+		}
 
-        return [status, message]
-    }
+		return [ status, message ]
+	}
 
-    synchronized def findRepositoryForFile(def file) {
-        def repository
+	synchronized def findRepositoryForFile( def file )
+	{
+		def repository
 
-        if (File.separatorChar == '\\') {
-            // I am having troubles with windows.  We will address this when we refactor the
-            // repo implementation
-            //
-            repository = Repository.findByBaseDir("/");
+		if ( File.separatorChar == '\\' )
+		{
+			// I am having troubles with windows.  We will address this when we refactor the
+			// repo implementation
+			//
+			repository = Repository.findByBaseDir( "/" );
 
-            if (!repository) {
-                repository = new Repository(baseDir: "/")
-                repository.save(flush: true)
-                log.debug("Creating default repository /")
-            }
+			if ( !repository )
+			{
+				repository = new Repository( baseDir: "/" )
+				repository.save( flush: true )
+				log.debug( "Creating default repository /" )
+			}
 
-            if (!repository) {
-                log.error("Could not create repository")
-            }
+			if( !repository )
+			{
+				log.error ("Could not create repository")
+			}
 
-            return repository
-        } else {
-            // log.error("IngestService: Does not contain the proper separatorChar")
-            log.debug("You may not have the appropriate permissions")
-        }
-    }
+			return repository
+		}
+		else
+		{
+			// log.error("IngestService: Does not contain the proper separatorChar")
+			log.debug("You may not have the appropriate permissions")
+		}
+	}
 
-    /**
-     * Creates a text file with the image file name and path,
-     * and the reason the stage/ingest was not successful.  This file
-     * can be used troubleshoot, and help to restage the image at a later time.
-     *
-     * @param filename The image file name
-     * @param message Http status message
-     * @param status Http status code
-     */
-    def createErrorFile(String filename, String message, Integer status) {
-        def errorFileDir = grailsApplication.config.getProperty('stager.errorFile.directory', String, "/tmp/omar-stager/errors/")
+	/**
+	 * Creates a text file with the image file name and path,
+	 * and the reason the stage/ingest was not successful.  This file
+	 * can be used troubleshoot, and help to restage the image at a later time.
+	 *
+	 * @param filename The image file name
+	 * @param message Http status message
+	 * @param status Http status code
+	 */
+	def createErrorFile (String filename, String message, Integer status) {
+		def errorFileDir = grailsApplication.config.getProperty('stager.errorFile.directory', String, "/tmp/omar-stager/errors/")
 
-        String pattern = "yyyy-MM-dd-HH-mm-ss-"
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern)
-        String datePrefix = simpleDateFormat.format(new Date())
+		String pattern = "yyyy-MM-dd-HH-mm-ss-"
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern)
+		String datePrefix = simpleDateFormat.format(new Date())
 
-        File errorDir = errorFileDir as File
-        errorDir.mkdirs()
+		File errorDir = errorFileDir as File
+		errorDir.mkdirs()
 
-        File errorFileName = File.createTempFile("stager-${datePrefix}", ".txt", errorDir)
+		File errorFileName = File.createTempFile("stager-${datePrefix}", ".txt", errorDir)
 
-        errorFileName.withWriter { out ->
-            out.println "filename: ${filename}"
-            out.println "message: ${message}"
-            out.println "status: ${status}"
+		errorFileName.withWriter { out ->
+			out.println "filename: ${filename}"
+			out.println "message: ${message}"
+			out.println "status: ${status}"
 
-        }
-    }
+		}
+	}
 
     /**
      * If enabled, sends a slack message to the webhook that is configured
@@ -196,7 +210,8 @@ class IngestService implements ApplicationContextAware {
         }
     }
 
-    void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext
-    }
+	void setApplicationContext( ApplicationContext applicationContext )
+	{
+		this.applicationContext = applicationContext
+	}
 }
