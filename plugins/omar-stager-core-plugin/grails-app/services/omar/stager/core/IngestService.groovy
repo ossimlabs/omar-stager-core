@@ -13,6 +13,7 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.MutableHttpRequest
 import javax.transaction.Transactional
+import java.time.LocalDateTime
 
 @Transactional
 class IngestService implements ApplicationContextAware
@@ -25,17 +26,26 @@ class IngestService implements ApplicationContextAware
 
 	@Value('${stager.errors.table.enabled:true}')
     Boolean errorsToTable
-    @Value('${stager.errors.slack.enabled:false}')
-    Boolean errorsToSlack
-	@Value('${stager.errors.slack.webhook}')
-	String slackWebhook
-	@Value('${stager.errors.slack.messagePrefix}')
-	String slackPrefix
 
-	def ingest( def oms, def baseDir = '/' )
-	{
-		def status  = HttpStatus.OK
-		def message = ""
+    @Value('${stager.errors.teams.enabled:false}')
+    Boolean errorsToTeams
+
+    @Value('${teams.webhook}')
+    String teamsWebhook
+
+    @Value('${teams.token}')
+    String teamsToken
+
+    @Value('${teams.rid}')
+    String teamsRid
+
+    @Value('${stager.errors.teams.message}')
+    String teamsPrefix
+
+    def ingest( def oms, def baseDir = '/' )
+    {
+        def status  = HttpStatus.OK
+        def message = ""
 
 		def errorFileEnabled = grailsApplication.config.getProperty('stager.errorFile.enabled', Boolean, false)
 
@@ -138,44 +148,63 @@ class IngestService implements ApplicationContextAware
 		}
 	}
 
-	/**
-	 * If enabled, sends a slack message to the webhook that is configured
-	 * in the omar-stager configmap.
-	 * If enabled, writes the error to the omar_stager_errors table.
-	 *
-	 * @param filename The image file name
-	 * @param message Http status message
-	 * @param status Http status code
-	 */
-	def writeErrors (String filename, String message, Integer status) {
+    /**
+     * If enabled, sends a slack message to the webhook that is configured
+     * in the omar-stager configmap.
+     * If enabled, writes the error to the omar_stager_errors table.
+     *
+     * @param filename The image file name
+     * @param message Http status message
+     * @param status Http status code
+     */
+    def writeErrors(String filename, String message, Integer status = 0) {
+        log.info("Hit an error with file: ${filename}")
 
-        if (errorsToSlack) {
-			log.info("Writing error to slack.")
-			URL slack = new URL(slackWebhook)
-			HttpClient httpClient = HttpClient.create(new URL(slack.toString() - slack.path))
+        if (!errorsToTeams && !errorsToTable) {
+            log.warn("All error writing is turned OFF!  Check config.")
+        }
 
-			// Pull in the message from the configmap and replace the placeholders
-			String slackMessage = "${slackPrefix}\nFile: ```${ -> filename}```\nError: ```${-> message}```"
+        if (errorsToTeams) {
+            log.info("Writing error to teams channel.")
+            URL teams = new URL(teamsWebhook)
+            HttpClient httpClient = HttpClient.create(new URL(teams.toString() - teams.path))
 
-			Map<String, String> slackMessageTemplate = new HashMap<>()
-  				slackMessageTemplate.put("text", slackMessage)
-				slackMessageTemplate.put("type","mrkdwn")
-			MutableHttpRequest<String> request = HttpRequest.POST(slack.path, "");
-			request.header("Content-Type", "application/json");
-			request.body(slackMessageTemplate)
-			HttpResponse<String> response = httpClient.toBlocking().exchange(request, String)
+            // Pull in the message from the configmap and replace the placeholders
+            String teamsMessage = "${teamsPrefix}\nError: ${-> message}"
 
-		}
+
+            Map<String, Object> teamsMessageTemplate = new HashMap<>()
+            Map<String, String> teamsText = new HashMap<>()
+            teamsMessageTemplate.put("message", teamsText)
+            teamsText.put("custom_name", "Filename")
+            teamsText.put("custom_name_value", filename)
+            teamsText.put("text", teamsMessage)
+
+            teamsMessageTemplate.put("sec1array", ["do not delete this array", "item2", "item3"])
+            teamsMessageTemplate.put("sec2array", ["do not delete this array ", "item5", "item6"])
+            teamsMessageTemplate.put("secboolean", true)
+
+            MutableHttpRequest<String> request = HttpRequest.POST(teams.path, "")
+            request.header("Content-Type", "application/json")
+            request.header("Webhook-Application", "omar-stager hit an error!")
+            request.header("Webhook-Type", "mxr_microservices")
+            request.header("token", teamsToken)
+            request.header("rid", teamsRid)
+            request.body(teamsMessageTemplate)
+            HttpResponse<String> response = httpClient.toBlocking().exchange(request, String)
+//            log.info("RESPONSE TO POST IS ${response.body().toString()}")
+
+        }
         if (errorsToTable) {
-	    log.info("Writing error to table.")
+            log.info("Writing error to table.")
             def logErrors = new OmarStagerErrors(
-                                            filename: filename,
-                                            statusMessage: message,
-											status: status
-                                            )
-            if ( !logErrors.save() ) {
-                	logErrors.errors.allErrors.each {
-                    log.error(messageSource.getMessage( it, Locale.default ))
+                    filename: filename,
+                    statusMessage: message,
+                    status: status
+            )
+            if (!logErrors.save()) {
+                logErrors.errors.allErrors.each {
+                    log.error(messageSource.getMessage(it, Locale.default))
                 }
             }
         }
